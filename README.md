@@ -38,7 +38,7 @@ Explore popular destinations as well as hidden gems curated by Travel Itinerary 
 
 ### Flowchart
 Here is a flowchart illustrating the process behind Travel Itinerary Generator's personalized itinerary generation:  
-![Flowchart](assets/flowchart.jpeg)
+![Flowchart](assets/flowchart.jpg)
 
 ## Usage
 
