@@ -1,0 +1,106 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up</title>
+    <!-- Load static CSS -->
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    <link rel="icon" href="{% static 'favicon.ico' %}" type="image/x-icon">
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <header>
+        <a href="{% url 'blog:index' %}" class="logo">
+            <img src="{% static 'images/logo.png' %}" alt="Logo">
+        </a>
+        <nav>
+            <ul>
+                <li><a href="{% url 'blog:index' %}" class="nav-link">Home</a></li>
+                <li><a href="{% url 'blog:index' %}#about" class="nav-link" id="about-link">About</a></li>
+                <li><a href="{% url 'blog:index' %}#contact" class="nav-link" id="contact-link">Contact</a></li>
+                <button class="night-mode-toggle" onclick="toggleNightMode()">
+                    <span id="modeIcon">🌙</span>
+                </button>
+            </ul>
+        </nav>
+    </header>
+    <div class="container">
+        <h2><i class="fas fa-user-plus"></i> Sign Up</h2>
+        {% for message in messages %}
+        <h5 style="color:red;">{{ message }}</h5>
+        {% endfor %}
+        <form id="signupForm" action="{% url 'blog:register' %}" method="post" onsubmit="return validatePasswords()">
+            {% csrf_token %}
+            <div class="form-group">
+                <div class="form-item">
+                    <label for="firstname">First Name:</label>
+                    <input type="text" id="firstname" placeholder="Enter your username" name="username" required>
+                </div>
+            </div>
+
+            <label for="email">Email:</label>
+            <input type="email" id="email" placeholder="Enter your Email" name="email" required>
+
+            <div class="password-container">
+                <label for="password">New Password:</label>
+                <input type="password" id="password" placeholder="Enter your password" name="password" required>
+                <i class="fas fa-eye toggle-password" onclick="togglePasswordVisibility('password')"></i>
+            </div>
+            <span id="passwordError" class="error-message"></span>
+
+            <div class="password-container">
+                <label for="recheckpassword">Confirm Password:</label>
+                <input type="password" id="recheckpassword" placeholder="Confirm your password" name="password2" required>
+            </div>
+
+            <button type="submit"><i class="fas fa-check"></i> Submit</button>
+        </form>
+        <p>Already have an account? <a href="{% url 'blog:login' %}"><i class="fas fa-sign-in-alt"></i> Login here</a></p>
+    </div>
+
+    <script>
+        function validatePasswords() {
+            var password = document.getElementById('password').value;
+            var recheckPassword = document.getElementById('recheckpassword').value;
+            var passwordError = document.getElementById('passwordError');
+            var passwordPattern = /^(?=.*[A-Z])(?=.*\d)/;
+
+            if (!passwordPattern.test(password)) {
+                document.getElementById('password').classList.add('error');
+                passwordError.textContent = 'Password must contain at least one uppercase letter and one number.';
+                return false;
+            } else {
+                document.getElementById('password').classList.remove('error');
+                passwordError.textContent = '';
+            }
+
+            if (password !== recheckPassword) {
+                document.getElementById('password').classList.add('error');
+                document.getElementById('recheckpassword').classList.add('error');
+                passwordError.textContent = 'Passwords do not match.';
+                return false;
+            } else {
+                document.getElementById('password').classList.remove('error');
+                document.getElementById('recheckpassword').classList.remove('error');
+                passwordError.textContent = '';
+            }
+            return true;
+        }
+
+        function toggleNightMode() {
+            var body = document.body;
+            var modeIcon = document.getElementById('modeIcon');
+
+            if (body.classList.toggle('night-mode')) {
+                modeIcon.textContent = '☀️'; // Sun icon for day mode
+            } else {
+                modeIcon.textContent = '🌙'; // Moon icon for night mode
+            }
+        }
+
+    </script>
+</body>
+</html>

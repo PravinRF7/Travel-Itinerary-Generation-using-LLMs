@@ -1,0 +1,794 @@
+{% load static%}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kullu Itinerary</title>
+    <link rel="stylesheet" href="{% static 'css/demo.css' %}">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <style>
+        body.night-mode {
+    background-color: #333;
+    color: white;
+}
+
+body.day-mode {
+    background-color: white;
+    color: black;
+}
+
+.container {
+    display: flex;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+    gap: 20px;
+}
+
+.left-section {
+    flex: 2; /* More space for the itinerary and image */
+    display: flex;
+    flex-direction: column;
+}
+
+.right-section {
+    flex: 1; /* Less space for the map */
+}
+
+#map { 
+    height: 500px;
+    width: 100%;
+    border-radius: 10px;
+    margin-bottom: 20px; /* Ensures gap between map and buttons */
+}
+
+a.buttn {
+    padding: 10px 20px;
+    background-color: #555;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    font-size: 16px;
+    text-align: center;
+    text-decoration: none; /* Remove underline */
+    display: inline-block;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+a.buttn:hover {
+    background-color: #444;
+}
+
+.buttons-container {
+    display: flex; /* Use flexbox to align items */
+    justify-content: center; /* Center the buttons */
+    gap: 10px; /* Space between buttons */
+    margin-top: 20px; /* Space above the buttons (if needed) */
+}
+
+.photo {
+    width: 200px;
+    height: 100px;
+    border-radius: 10px;
+}
+
+.details {
+    margin-top: 20px;
+}
+
+.details h2, .details p {
+    margin-bottom: 10px;
+}
+
+.scroll-box {
+    max-height: 300px;
+    overflow-y: scroll;
+    padding-right: 10px;
+}
+
+.toggle-button {
+    margin-top: 20px;
+    cursor: pointer;
+    background-color: #555;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    font-size: 16px;
+}
+
+/* Style for numbered markers */
+.leaflet-div-icon {
+    background-color: red;
+    color: white;
+    text-align: center;
+    border-radius: 50%;
+    font-size: 14px;
+    line-height: 24px;
+    width: 30px;
+    height: 30px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid white;
+    box-shadow: 0 0 3px rgba(0, 0, 0, 0.5);
+}
+
+.tab-titles {
+    display: flex;
+    margin: 20px 0 40px;
+    transition: transform 0.5s;   
+}
+
+.tab-links {
+    margin-right: 50px;
+    font-size: 18px;
+    font-weight: 500;
+    cursor: pointer;
+    position: relative;
+    display: inline-block;
+    transition: transform 0.5s;
+}
+
+.tab-links:hover {
+    color:#E1D14E;
+    transform: translateY(-5px);
+}
+
+.tab-links::after {
+    content: '';
+    width:0;
+    height: 3px;
+    color:#E1D14E;
+    background: #ff004f;
+    position:absolute;
+    left: 0;
+    bottom: -8px;
+    transition: 0.5s;
+}
+
+.tab-links.active-link::after {
+    width: 100%;
+}
+.tab-contents {
+    display: none;
+}
+
+.tab-contents.active-tab {
+    display: block;
+}
+    </style>
+</head>
+<header class="top-nav">
+    <a href="{% url 'blog:index' %}" class="logo">
+        <img src="{% static 'images/logo.png' %}" alt="Logo">
+    </a>
+    <nav>
+        <ul>
+            <li><a href="{% url 'blog:index' %}" class="nav-link">Home</a></li>
+            <li><a href="{% url 'blog:index' %}#about" class="nav-link" id="about-link">About</a></li>
+            <li><a href="{% url 'blog:index' %}#contact" class="nav-link" id="contact-link">Contact</a></li>
+        </ul>
+    </nav>
+
+    <div class="nav-icons">
+        <i class="icon-bell"></i>
+        <div class="profile-container">
+            <img src="{{ profile.profile_photo.url }}" alt="User" class="profile-pic" id="profile-pic">
+        
+            <div class="dropdown-menu" id="dropdown-menu">
+                <div class="profile-summary">
+                    <img src="{{ profile.profile_photo.url }}" alt="User" class="profile-pic-large" id="profile-summary-pic">
+                    <p>Name: <strong>{{ user.get_full_name|default:user.username }}</strong></p>
+                </div>
+                <hr>
+                <ul>
+                    <li id="show-profile"><a href="#"><i class="icon-eye"></i> Show Profile</a></li>
+                    <li><a href="#" id="settings-icon"><i class="icon-settings"></i> Settings</a></li>
+                    <li><a href="{% url 'logout' %}"><i class="icon-signout"></i> Sign out</a></li>
+                </ul>
+        
+                <div id="profile-details" style="display: none;">
+                    <div class="profile-info">
+                        <button id="close-profile" class="close-btn">&times;</button>
+                        <img src="{{ profile.profile_photo.url }}" alt="User" class="profile-pic-large" id="profile-details-pic">
+                        <div class="user-details">
+                            <p>Name: <strong>{{ user.get_full_name|default:user.username }}</strong></p>
+                            <p>Email: <strong>{{ user.email }}</strong></p>
+                        </div>
+                    </div>
+        
+                    <!-- Form for uploading a new profile photo -->
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <!-- Custom file upload -->
+                        <div class="upload-field">
+                            <!-- Custom button and hidden file input -->
+                            <label for="id_profile_photo" class="file-input-label">Choose File</label>
+                            <input type="file" id="id_profile_photo" name="profile_photo" class="file-input" style="display: none;" onchange="updateFileName()">
+                            
+                            <!-- Text for No file chosen -->
+                            <span class="file-chosen-text" id="file-chosen-text">No file chosen</span>
+                        </div>
+                        <button type="submit" class="save-btn">Save Photo</button>
+                    </form>
+                </div>
+            </div>
+        </div>                                             
+    </div>
+    <button class="night-mode-toggle" onclick="toggleNightMode()">
+                <span id="modeIcon">🌙</span>
+            </button>
+</header>
+<body class="night-mode">
+    <div class="container">
+        <!-- Left section for photo and itinerary -->
+        <div class="left-section">
+            <h1>Agra Itinerary</h1>
+
+            <img src="taj.jpeg" alt="Golden Temple" class="photo">
+
+            <!-- Scrollable itinerary section -->
+            <div class="about-col-2">
+                <div class="tab-titles">
+                    <p class="tab-links active-link" onclick="opentab(event, 'onedays'),oneday()">ONE DAY Itinerary</p>
+                    <p class="tab-links" onclick="opentab(event, 'threedays')">THREE DAYS Itinerary</p>
+                    <p class="tab-links" onclick="opentab(event, 'fivedays')">FIVE DAYS Itinerary</p>
+                    <p class="tab-links" onclick="opentab(event, 'sevendays')">SEVEN DAYS Itinerary</p>
+                </div>
+                <div class="tab-contents active-tab" id="onedays">
+                    <div class="scroll-box"> 
+                        <div class="details">
+                            <h2>Day 1 in Agra:</h2>
+                            <p><strong>08:00 AM:</strong> Begin your day with a hearty breakfast at <em>"Heart of Taj Café & Kitchen"</em> known for its pancakes, waffles, and omelets. (Agra, Uttar Pradesh 282004)</p>
+                            <p><strong>10:00 AM:</strong> Visit the iconic <em>Taj Mahal</em>, a UNESCO World Heritage Site and Mughal Emperor Shah Jahan's mausoleum built in memory of his wife Mumtaz Mahal. (Agra, Uttar Pradesh)</p>
+                            <p><strong>12:30 PM:</strong> Head to <em>Sheroes Hangout</em>, a unique café run by acid attack survivors where you can enjoy lunch while supporting this cause. (Tajganj, Agra)</p>
+                            <p><strong>02:30 PM:</strong> Explore <em>Agra Fort</em>, another UNESCO World Heritage Site, which was the primary residence of the Mughal Emperors until 1632 when Shah Jahan shifted the capital to Delhi. (Ram Bagh, Agra)</p>
+                            <p><strong>05:00 PM:</strong> Relax and unwind at <em>Mehtab Bagh</em>, also called the 'Moonlight Garden,' offering a stunning view of the Taj Mahal across the reflective pool. (Dilkusha, Agra)</p>
+                            <p><strong>07:00 PM:</strong> Experience a delicious dinner at <em>Pinch of Spice</em>, a popular eatery serving authentic Indian dishes and located near the Taj Mahal. (Fatehabad Road, Agra)</p>
+
+                        </div>
+                    </div>
+                </div>
+                <div class="tab-contents" id="threedays">
+                    <div class="day-tabs">
+                        <p class="tab-links active-link" onclick="openday(event, 'day1', 'threedays')">Day 1</p>
+                        <p class="tab-links" onclick="openday(event, 'day2', 'threedays')">Day 2</p>
+                        <p class="tab-links" onclick="openday(event, 'day3', 'threedays')">Day 3</p>
+                    </div>
+                    <div class="scroll-box">
+                        <div class="details" id="day1-threedays">
+                            <h2>Day 1 in Agra:</h2>
+                            <p><strong>08:00 AM:</strong> Begin your day with a hearty breakfast at <em>"Heart of Taj Café & Kitchen"</em> (Taj Ganj, Agra)</p>
+                            <p><strong>10:00 AM:</strong> Visit <em>Taj Mahal</em> (Agra Fort Road) - iconic mausoleum built by Mughal Emperor Shah Jahan</p>
+                            <p><strong>01:00 PM:</strong> Savor a traditional Indian lunch at <em>Rambabu Palace Restaurant</em> (Fatehabad Road, Agra)</p>
+                            <p><strong>02:30 PM:</strong> Explore <em>Agra Fort</em> (Ram Bagh, Agra) - historic fortress and former residence of Mughal emperors</p>
+                            <p><strong>07:00 PM:</strong> Dine at <em>Kebab-e-que</em> (Sanjeevani, Agra) for famous Mughlai dishes</p>
+                        </div>
+                        <div class="details" id="day2-threedays" style="display: none;">
+                            <h2>Day 2:</h2>
+                            <p><strong>08:00 AM:</strong> Breakfast at <em>Jodha Restaurant</em> (Fatehpur Sikri, Uttar Pradesh 283110)</p>
+                            <p><strong>10:00 AM:</strong> Marvel at <em>Fatehpur Sikri</em> (Buland Darwaza, Agra) - a UNESCO World Heritage Site and former capital city</p>
+                            <p><strong>01:00 PM:</strong> Lunch at <em>Laxmi Vilas Palace</em> (Bhadohi Gate, Agra)</p>
+                            <p><strong>02:30 PM:</strong> Discover <em>Mehtab Bagh</em> (Dilkusha, Agra) - a beautiful garden with a reflection pool facing the Taj Mahal</p>
+                            <p><strong>07:00 PM:</strong> Dinner at <em>Sheroes Hangout Cafe</em> (Taj Ganj, Agra) - unique social enterprise supporting acid attack survivors</p>
+                        </div>
+                        <div class="details" id="day3-threedays" style="display: none;">
+                            <h2>Day 3 in Agra:</h2>
+                            <p><strong>08:00 AM:</strong> Breakfast at <em>Pinch of Spice</em> (46, Tansen Lane, Agra)</p>
+                            <p><strong>10:00 AM:</strong> Shopping at <em>Sadar Bazaar</em> (Sadar Bazar, Agra) - traditional markets for souvenirs and local specialties</p>
+                            <p><strong>01:00 PM:</strong> Lunch at <em>Bukhraat Mughlai Foods Delhi</em> (Sadar Bazar, Delhi) - picturesque restaurant known for its ambiance and food</p>
+                            <p><strong>02:30 PM:</strong> Relax and unwind at <em>Soami Bagh</em> (Soami Bagh, Agra) - beautiful gardens and peaceful atmosphere</p>
+                            <p><strong>07:00 PM:</strong> Dinner at <em>Soami's Rasoi</em> (Fatehabad Road, Agra) - authentic Rajasthani and Gujarati cuisine</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="tab-contents" id="fivedays">
+                    <div class="day-tabs">
+                        <p class="tab-links active-link" onclick="openday(event, 'day1', 'fivedays')">Day 1</p>
+                        <p class="tab-links" onclick="openday(event, 'day2', 'fivedays')">Day 2</p>
+                        <p class="tab-links" onclick="openday(event, 'day3', 'fivedays')">Day 3</p>
+                        <p class="tab-links" onclick="openday(event, 'day4', 'fivedays')">Day 4</p>
+                        <p class="tab-links" onclick="openday(event, 'day5', 'fivedays')">Day 5</p>
+                    </div>
+                    <div class="scroll-box"> 
+                        <div class="details" id="day1-fivedays" style="display: block;"> <!-- Show Day 1 by default -->
+                            <h2>Day 1 in Agra:</h2>
+                            <p><strong>08:00 AM:</strong> Start your day with a hearty breakfast at <em>Manoj dosa</em> (mantola,Agra)</p>
+                            <p><strong>10:00 AM:</strong> Visit <em>Agra Fort</em></p>
+                            <p><strong>01:00 PM:</strong> Lunch at <em>MUGH CHI RESTAURANT</em> (Agra,Uttar Pradesh)</p>
+                            <p><strong>02:30 PM:</strong> Explore <em>Mehtab Bagh</em></p>
+                            <p><strong>07:00 PM:</strong> Dinner at <em>The Momo Heaven</em> (Motimahal, Agra)</p>                            
+                        </div>
+                        <div class="details" id="day2-fivedays" style="display: none;"> <!-- Hide other days by default -->
+                            <h2>Day 2 in Agra:</h2>
+                            <p><strong>08:00 AM:</strong> Breakfast at <em>Pinch of Spice</em> (Sanjay Place)</p>
+                            <p><strong>10:00 AM:</strong> Visit <em>Taj Mahal</em></p>
+                            <p><strong>01:00 PM:</strong> Lunch at <em>Sheroes Hangout</em> (Agnipath)</p>
+                            <p><strong>02:30 PM:</strong> Explore <em>Mariam's Tomb</em> and <em>Jodha Bai's Palace</em></p>
+                            <p><strong>07:00 PM:</strong> Dinner at <em>Sasural The Restro</em> </p>
+                        </div>
+                        <div class="details" id="day3-fivedays" style="display: none;">
+                            <h2>Day 3 in Agra:</h2>
+                            <p><strong>08:00 AM:</strong> Breakfast at <em> Bhagwati Dhaba</em> (Sikandra Road)</p>
+                            <p><strong>10:00 AM:</strong> Visit <em>Sikandra</em> and <em>Akbar's Tomb</em></p>
+                            <p><strong>01:00 PM:</strong> Lunch at <em>Shiv Family Rastaurant</em> (Agra, Uttar Pradesh)</p>
+                            <p><strong>02:30 PM:</strong> Explore <em>Chini-ka-Rauza</em> and <em>Dayal Bagh Temple</em></p>
+                            <p><strong>07:00 PM:</strong> Dinner at <em>Shree Krishna Restaurant</em> (Agra, Uttar Pradesh)</p>
+                        </div>
+                        <div class="details" id="day4-fivedays" style="display: none;">
+                            <h2>Day 4 in Agra:</h2>
+                            <p><strong>08:00 AM:</strong> Breakfast at <em>Namaste Restaurant Vrindavan</em> (Vrindavan, Uttar Pradesh )</p>
+                            <p><strong>10:00 AM:</strong> Visit <em>Mathura</em> and <em>Vrindavan</em> (approximately 2 hours each way)</p>
+                            <p><strong>01:00 PM:</strong> Lunch at <em>PRAKASH FAMILY DHABA</em> (Vrindavan)</p>
+                            <p><strong>02:30 PM:</strong> Return to Agra and explore <em>Sadar Bazaar</em> for shopping</p>
+                            <p><strong>07:00 PM:</strong> Dinner at <em>Kake Di Hatti</em></p>
+                        </div>
+                        <div class="details" id="day5-fivedays" style="display: none;">
+                            <h2>Day 5 in Agra:</h2>
+                            <p><strong>08:00 AM:</strong> Breakfast at <em>Jodha Restaurant</em> (Fatehpur Sikri)</p>
+                            <p><strong>10:00 AM:</strong> Visit <em>Fatehpur Sikri</em></p>
+                            <p><strong>01:00 PM:</strong> Lunch at <em>Utsav Resort</em> (Fatehpur Sikri)</p>
+                            <p><strong>02:30 PM:</strong> Explore <em>Agra Local Market</em> for souvenirs</p>
+                            <p><strong>07:00 PM:</strong> Farewell Dinner at <em>Masala Darbar Restaurant</em> </p>
+                        </div>
+                    </div>
+                </div>                
+                <div class="tab-contents" id="sevendays">
+                    <div class="day-tabs">
+                        <p class="tab-links active-link" onclick="openday(event, 'day1', 'sevendays')">Day 1</p>
+                        <p class="tab-links" onclick="openday(event, 'day2', 'sevendays')">Day 2</p>
+                        <p class="tab-links" onclick="openday(event, 'day3', 'sevendays')">Day 3</p>
+                        <p class="tab-links" onclick="openday(event, 'day4', 'sevendays')">Day 4</p>
+                        <p class="tab-links" onclick="openday(event, 'day5', 'sevendays')">Day 5</p>
+                        <p class="tab-links" onclick="openday(event, 'day6', 'sevendays')">Day 6</p>
+                        <p class="tab-links" onclick="openday(event, 'day7', 'sevendays')">Day 7</p>
+                    </div>
+                    <div class="scroll-box"> 
+                        <div class="details" id="day1-sevendays" style="display: block;"> <!-- Show Day 1 by default -->
+                            <h2>Day 1 in Agra:</h2>
+                            <p><strong>08:00 AM:</strong> Breakfast at <em>Sheroes Hangout</em>(Agnipath)</p>
+                            <p><strong>10:00 AM:</strong> Visit <em>Taj Mahal</em></p>
+                            <p><strong>01:00 PM:</strong> Lunch at <em>MUGH CHI RESTAURANT</em></p>
+                            <p><strong>02:30 PM:</strong> Explore <em>Agra Fort</em></p>
+                            <p><strong>07:00 PM:</strong> Dinner at <em>Manoj dosa</em></p>
+                        </div>
+                        <div class="details" id="day2-sevendays" style="display: none;">
+                            <h2>Day 2 in Agra:</h2>
+                            <p><strong>08:00 AM:</strong> Breakfast at <em>MUGH CHI RESTAURANT</em></p>
+                            <p><strong>10:00 AM:</strong> Visit <em>Mehtab Bagh</em> (Moonlight Garden)</p>
+                            <p><strong>01:00 PM:</strong> Lunch at <em>Shiv Family Rastaurant</em></p>
+                            <p><strong>02:30 PM:</strong> Explore <em>Chini-ka-Rauza</em> and <em>Mariam's Tomb</em></p>
+                            <p><strong>07:00 PM:</strong> Dinner at <em>Shree Krishna Restaurant</em></p>
+                        </div>
+                        <div class="details" id="day3-sevendays" style="display: none;">
+                            <h2>Day 3 in Agra:</h2>
+                            <p><strong>08:00 AM:</strong> Breakfast at <em>Raja ka dhaba</em></p>
+                            <p><strong>10:00 AM:</strong> Visit <em>Akbar's Tomb</em> in Sikandra</p>
+                            <p><strong>01:00 PM:</strong> Lunch at <em>Pinch of Spice</em></p>
+                            <p><strong>02:30 PM:</strong> Visit <em>Tomb of Itimad-ud-Daulah</em></p>
+                            <p><strong>07:00 PM:</strong> Dinner at <em>The Green Table</em></p>
+                        </div>
+                        <div class="details" id="day4-sevendays" style="display: none;">
+                            <h2>Day 4 in Agra:</h2>
+                            <p><strong>08:00 AM:</strong> Breakfast at <em>H B K FAMILY RESTAURANT</em></p>
+                            <p><strong>10:00 AM:</strong> Visit <em>Fatehpur Sikri</em> (a day trip from Agra)</p>
+                            <p><strong>01:00 PM:</strong> Lunch at <em>Utsav Resort</em> in Fatehpur Sikri</p>
+                            <p><strong>02:30 PM:</strong> Explore <em>Fatehpur Sikri</em> further</p>
+                            <p><strong>07:00 PM:</strong> Return to Agra and have dinner at <em>Jodha Restaurant</em></p>
+                        </div>
+                        <div class="details" id="day5-sevendays" style="display: none;">
+                            <h2>Day 5 in Agra:</h2>
+                            <p><strong>08:00 AM:</strong> Breakfast at <em>Radhe Krishna Fouji Tourist Family Dhabha</em></p>
+                            <p><strong>10:00 AM:</strong> Visit <em>Keetham Lake</em></p>
+                            <p><strong>01:00 PM:</strong> Lunch at <em>Shree Banke Bihari Dhaba</em></p>
+                            <p><strong>02:30 PM:</strong> Shopping for souvenirs in Agra's local markets</p>
+                            <p><strong>07:00 PM:</strong> Dinner at <em>Masala Darbar Restaurant</em></p>
+                        </div>
+                        <div class="details" id="day6-sevendays" style="display: none;">
+                            <h2>Day 6 in Agra:</h2>
+                            <p><strong>08:00 AM:</strong> Breakfast at <em>Brij Rasoi</em></p>
+                            <p><strong>10:00 AM:</strong> Visit <em>Mathura City</em> (a day trip from Agra, famous for Lord Krishna temples)</p>
+                            <p><strong>01:00 PM:</strong> Lunch at <em>TBC Restaurant & sweets</em> in Mathura</p>
+                            <p><strong>02:30 PM:</strong> Explore Mathura further</p>
+                            <p><strong>07:00 PM:</strong> Return to Agra and have dinner at <em>Hugs & Bite</em></p>
+                        </div>
+                        <div class="details" id="day7-sevendays" style="display: none;">
+                            <h2>Day 7 in Agra:</h2>
+                            <p><strong>08:00 AM:</strong> Breakfast at <em>Pinch of Spice</em></p>
+                            <p><strong>10:00 AM:</strong> Visit <em>Taj Mahal</em> again for sunrise (preferably book a guided tour)</p>
+                            <p><strong>01:00 PM:</strong> Lunch at <em>MUGH CHI RESTAURANT</em></p>
+                            <p><strong>02:30 PM:</strong> Relax and explore Agra at your own pace or attend an Indian cooking class</p>
+                            <p><strong>07:00 PM:</strong> Farewell dinner at <em>Pinch of Spice</em></p>
+                        </div>
+                    </div>
+                </div>
+                
+            </div>
+        </div>
+
+        <!-- Right section for map -->
+        <div class="right-section">
+            <div id="map"></div>
+            <a href="D:\intel hackathon\new\voyage verse.pdf" id="downloadBtn" class="buttn btn">Download</a>
+        </div>
+    </div>
+    <!---------------------------Footer------------------->
+    <footer>
+        <p>&copy; Voyage Verse-2024</p>
+    </footer>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY"></script>
+
+    <script>
+// Global variable to store the current map instance
+let currentMap;
+let darkModeLayer;
+let lightModeLayer;
+
+// Night Mode Toggle
+function toggleNightMode() {
+    const body = document.body;
+    const modeIcon = document.getElementById('modeIcon');
+    
+    // Toggle between day and night modes
+    body.classList.toggle('day-mode');
+    body.classList.toggle('night-mode');
+    
+    // Switch the map layers
+    if (body.classList.contains('day-mode')) {
+        map.removeLayer(darkModeLayer);
+        map.addLayer(lightModeLayer);
+        modeIcon.textContent = '☀️'; // Day mode icon
+    } else {
+        map.removeLayer(lightModeLayer);
+        map.addLayer(darkModeLayer);
+        modeIcon.textContent = '🌙'; // Night mode icon
+    }
+}
+
+// Function to switch between main itinerary tabs
+function opentab(event, tabname) {
+    const tabcontents = document.getElementsByClassName("tab-contents");
+    const tablinks = document.getElementsByClassName("tab-links");
+
+    // Hide all tab contents and remove active class from all tab links
+    for (let content of tabcontents) {
+        content.classList.remove("active-tab");
+    }
+    for (let link of tablinks) {
+        link.classList.remove("active-link");
+    }
+
+    // Show the selected tab content and mark the clicked tab as active
+    document.getElementById(tabname).classList.add("active-tab");
+    event.currentTarget.classList.add("active-link");
+
+    // Call the appropriate function based on the selected tab
+    switch(tabname) {
+        case "onedays":
+            oneday();
+            break;
+        case "threedays":
+            openday(event, 'day1', 'threedays');
+            break;
+        case "fivedays":
+            openday(event, 'day1', 'fivedays');
+            break;
+        case "sevendays":
+            openday(event, 'day1', 'sevendays');
+            break;
+    }
+}
+
+// Function to switch between days for multi-day itineraries
+function openday(event, day, itinerary) {
+    const details = document.querySelectorAll(`#${itinerary} .details`);
+    const dayTabs = document.querySelectorAll(`#${itinerary} .day-tabs .tab-links`);
+
+    // Hide all day contents and remove active class from all day tabs
+    for (let detail of details) {
+        detail.style.display = "none";
+    }
+    for (let tab of dayTabs) {
+        tab.classList.remove("active-link");
+    }
+
+    // Show the selected day's content and mark the clicked day tab as active
+    document.getElementById(`${day}-${itinerary}`).style.display = "block";
+    event.currentTarget.classList.add("active-link");
+
+    // Update the map based on the selected day and itinerary
+    updateMap(day, itinerary);
+}
+
+// Function to update the map based on the selected day and itinerary
+function updateMap(day, itinerary) {
+    // Clear the existing map
+    if (currentMap) {
+        currentMap.remove();
+    }
+
+    // Create a new map instance
+    currentMap = L.map('map', {
+        attributionControl: false
+    });
+
+    // Add the tile layer (dark mode by default)
+    darkModeLayer = L.tileLayer('https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
+        maxZoom: 20,
+        subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
+    }).addTo(currentMap);
+
+    // Get the places data for the selected day and itinerary
+    const places = getPlacesData(day, itinerary);
+
+    // Add markers and create the route
+    let bounds = L.latLngBounds();
+    let coordinates = [];
+
+    places.forEach((place, index) => {
+        const marker = L.marker([place.lat, place.lng], {
+            icon: L.divIcon({
+                className: 'leaflet-div-icon',
+                html: (index + 1)
+            })
+        }).addTo(currentMap);
+
+        marker.bindPopup(`
+            <strong>${place.time}: ${place.name}</strong><br>
+            ${place.description}<br>
+            <a href="https://www.google.com/maps/search/?api=1&query=${place.lat},${place.lng}" target="_blank">Go to Google Maps</a>
+        `);
+
+        coordinates.push([place.lat, place.lng]);
+        bounds.extend([place.lat, place.lng]);
+    });
+
+    // Add polyline connecting the places
+    L.polyline(coordinates, { color: 'blue', weight: 3 }).addTo(currentMap);
+
+    // Fit the map to show all markers
+    currentMap.fitBounds(bounds);
+}
+
+// Function to get places data based on the selected day and itinerary
+function getPlacesData(day, itinerary) {
+    const itineraryData = {
+        onedays: {
+            day1:[
+                {"name": "Heart of Taj Café & Kitchen", "lat": 27.373483787599746,  "lng": 78.01681697719467 , "time": "08:00 AM","description":"Heart of Taj Café & Kitchen , enjoy the best food and start your day great. (Agra, Uttar Pradesh 282004"},
+                {"name": "Taj Mahal", "lat": 27.17529751235649,  "lng": 78.0421422, "time": "10:00 AM", "description": "Visit the iconic Taj Mahal, a UNESCO World Heritage Site and Mughal Emperor Shah Jahan's mausoleum built in memory of his wife Mumtaz Mahal. (Agra, Uttar Pradesh)"},
+                {"name": "Sheroes Hangout", "lat":27.160207911337025,  "lng": 78.05373248562948, "time": "12:30 PM", "description": "Head to Sheroes Hangout, a unique café run by acid attack survivors where you can enjoy lunch while supporting this cause. (Tajganj, Agra)"},
+                {"name": "Agra Fort", "lat": 27.181521869815878, "lng":  78.02238704180418, "time": "02:30 PM", "description": "Explore Agra Fort, another UNESCO World Heritage Site, which was the primary residence of the Mughal Emperors until 1632 when Shah Jahan shifted the capital to Delhi. (Ram Bagh, Agra)"},
+                {"name": "Mehtab Bagh", "lat": 27.180659051734416, "lng": 78.04242361155094, "time": "05:00 PM", "description": "Relax and unwind at Mehtab Bagh, also called the 'Moonlight Garden,' offering a stunning view of the Taj Mahal across the reflective pool. (Dilkusha, Agra)"},
+                {"name": "Pinch of Spice", "lat": 27.20880908098449, "lng": 77.99210212522075 , "time": "07:00 PM", "description": "Experience a delicious dinner at Pinch of Spice, a popular eatery serving authentic Indian dishes and located near the Taj Mahal. (Fatehabad Road, Agra)"}
+            ],
+        },
+        threedays: {
+            day1: [
+                {"name": "Heart of Taj Café & Kitchen", "lat": 27.170653146005805,"lng": 78.04232248209374, "time": "08:00 AM", "description": "Begin your day with a hearty breakfast at Heart of Taj Café & Kitchen (Taj Ganj, Agra)."},
+                {"name": "Taj Mahal", "lat": 27.17529751235649 , "lng":78.05373248562948 , "time": "10:00 AM", "description": "Visit the iconic Taj Mahal (Agra Fort Road), built by Mughal Emperor Shah Jahan."},
+                {"name": "Rambabu Ke parathe", "lat":27.14969182408733, "lng":  78.0752304022206, "time": "01:00 PM", "description": "Savor a traditional Indian lunch at Rambabu Ke Parathe Restaurant (Fatehabad Road, Agra)."},
+                {"name": "Agra Fort", "lat": 27.181521869815878, "lng":78.02238704180418, "time": "02:30 PM", "description": "Explore the historic Agra Fort (Ram Bagh, Agra), a former residence of Mughal emperors."},
+                {"name": "Kebab-e-que", "lat":27.15137813840992, "lng": 78.05188182831677, "time": "07:00 PM", "description": "Dine at Kebab e queue (Sanjeevani, Agra) for famous Mughlai dishes."}
+            ],
+
+            day2: [
+                {"name": "Jodha Restaurant", "lat":27.095285338992348 , "lng":  77.66640555789797, "time": "08:00 AM", "description": "Breakfast at Jodha Restaurant(Fatehpur Sikri, Uttar Pradesh 283110)."},
+                {"name": "Fatehpur Sikri", "lat": 27.124021642257055, "lng": 77.6622860475809,  "time": "10:00 AM", "description": "Marvel at Fatehpur Sikri (Buland Darwaza, Agra), a UNESCO World Heritage Site and former capital city."},
+                {"name": "Laxmi Vilas Palace", "lat": 27.367898046844672, "lng":  77.43862413326997, "time": "01:00 PM", "description": "Lunch at Laxmi Vilas Palace (Bhadohi Gate, Agra)."},
+                {"name": "Mehtab Bagh", "lat": 27.180659051734416, "lng":78.04242361155094, "time": "02:30 PM", "description": "Discover Mehtab Bagh (Dilkusha, Agra), a garden with a reflection pool facing the Taj Mahal."},
+                {"name": "Sheroes Hangout Cafe", "lat": 27.160207911337025, "lng": 78.05373248562948, "time": "07:00 PM", "description": "Dinner at Sheroes Hangout Cafe (Taj Ganj, Agra), supporting acid attack survivors."}
+            ],
+
+            day3: [
+                {"name": "Pinch of Spice", "lat": 27.20880908098449, "lng":77.99210212522075 , "time": "08:00 AM", "description": "Breakfast at Pinch of Spice (46, Tansen Lane, Agra)."},
+                {"name": "Sadar Bazaar", "lat":28.65871784522242,  "lng": 77.21269649839218, "time": "10:00 AM", "description": "Shopping at Sadar Bazaar (Sadar Bazar, Agra), traditional markets for souvenirs and local specialties."},
+                {"name": "Bukhraat Mughlai Foods Delhi", "lat": 28.657331394177316,  "lng":77.21175481927936, "time": "01:00 PM", "description": "Lunch at Bukhraat Mughlai Foods Delhi (Sadar Bazaar, Delhi, 110006), a picturesque restaurant known for its ambiance and food."},
+                {"name": "Soami Bagh", "lat":27.22074438833731 , "lng": 78.0073033239739, "time": "02:30 PM", "description": "Relax and unwind at Soami Bagh (Soami Bagh, Agra), with beautiful gardens and a peaceful atmosphere."},
+                {"name": "Soami's Rasoi", "lat": 27.213937783118674, "lng": 78.00572819145648, "time": "07:00 PM", "description": "Dinner at Agra Colony, Agra, Uttar Pradesh 282005, serving authentic Rajasthani and Gujarati cuisine."}
+            ],
+        },
+        fivedays: {
+            day1: [
+                {"name": "Manoj dosa", "lat":27.18438937789029,  "lng": 78.01620650393401 , "time": "08:00 AM", "description": "Start your day with a hearty breakfast at Manoj dosa (mantola,Agra)."},
+                {"name": "Agra Fort", "lat": 27.181521869815878, "lng":78.02238704180418, "time": "10:00 AM", "description": "Visit Agra Fort."},
+                {"name": "MUGH CHI RESTAURANT", "lat": 27.19082810363553, "lng": 78.02477531186193, "time": "01:00 PM", "description": "Lunch at  MUGH CHI RESTAURANT Mantola, Agra, Uttar Pradesh 282003 "},
+                {"name": "Mehtab Bagh", "lat": 27.180659051734416, "lng": 78.04242361155094, "time": "02:30 PM", "description": "Explore Mehtab Bagh."},
+                {"name": "The Momo Heaven", "lat": 27.18467407421758, "lng": 78.03091355048058, "time": "07:00 PM", "description": "The Momo Heaven( Motimahal, Agra, Uttar Pradesh 282002)."}
+            ],
+
+            day2: [
+                {"name": "Pinch of Spice", "lat":27.20880908098449, "lng": 77.99210212522075, "time": "08:00 AM", "description": "Breakfast at Pinch of Spice (Sanjay Place)."},
+                {"name": "Taj Mahal", "lat":27.17529751235649  , "lng":78.05373248562948 , "time": "10:00 AM", "description": "Visit the Taj Mahal."},
+                {"name": "Sheroes Hangout", "lat": 27.160207911337025, "lng":78.05373248562948, "time": "01:00 PM", "description": "Lunch at Sheroes Hangout (Agnipath)."},
+                {"name": "Mariam's Tomb", "lat":27.215439351923024, "lng":77.942683549125, "time": "02:30 PM", "description": "Explore Mariam's Tomb and Jodha Bai's Palace."},
+                {"name": "Sasural The Restro ", "lat": 27.205536556880872, "lng":  77.95677443811877, "time": "07:00 PM", "description": "Dinner at Sasural The Restro (Best restaurant in agra)."}
+            ],
+
+            day3: [
+                {"name": "Bhagwati Dhaba", "lat":27.222206813887663,  "lng":77.93124701681703, "time": "08:00 AM", "description": "Breakfast at Bhagwati Dhaba (Sikandra Road)."},
+                {"name": "Sikandra", "lat": 27.22086199662023,  "lng": 77.95041335699196, "time": "10:00 AM", "description": "Visit Sikandra and Akbar's Tomb."},
+                {"name": "Shiv Family Rastaurant", "lat":27.21640523859157,  "lng": 77.9513455671063 , "time": "01:00 PM", "description": "Lunch at Shiv Family Rastaurant, Agra, Uttar Pradesh 282007"},
+                {"name": "Chini-ka-Rauza", "lat": 27.201538875155588, "lng": 78.03443348878945, "time": "02:30 PM", "description": "Explore Chini-ka-Rauza and Dayal Bagh Temple."},
+                {"name": "Shree Krishna Restaurant", "lat": 27.208174357999464, "lng": 78.04730941383077, "time": "07:00 PM", "description": "Dinner at Shree Krishna Restaurant Agra, Uttar Pradesh 282006"}
+            ],
+
+            day4: [
+                {"name": "Namaste Restaurant Vrindavan", "lat":27.57136397404267, "lng": 77.67262691836751, "time": "08:00 AM", "description": "Breakfast at Namaste Restaurant Vrindavan where Traditional vegetarian dishes, breakfast & mocktails served in a down-to-earth eatery. Vrindavan, Uttar Pradesh 281121"},
+                {"name": "Mathura", "lat": 27.572460171442504, "lng":77.67190741747025, "time": "10:00 AM", "description": "Visit Mathura and Vrindavan (approximately 2 hours each way)."},
+                {"name": "PRAKASH FAMILY DHABA ", "lat":27.560771528252868,  "lng": 77.63057756341564, "time": "01:00 PM", "description": "Lunch at PRAKASH FAMILY DHABA(Vrindavan)."},
+                {"name": "Sadar Bazaar", "lat": 28.69248984843743, "lng": 77.22573610298589, "time": "02:30 PM", "description": "Return to Agra and explore Sadar Bazaar for shopping."},
+                {"name": "Kake Di Hatti", "lat":28.65918066068015, "lng": 77.22351002648027, "time": "07:00 PM", "description": "Dinner at Kake Di Hatti,Delhi"}
+            ],
+
+            day5: [
+                {"name": "Jodha Restaurant", "lat": 27.096269050040046, "lng":77.66650089201208, "time": "08:00 AM", "description": "Breakfast at Jodha Restaurant  Fatehpur Sikri, Uttar Pradesh 283110"},
+                {"name": "Fatehpur Sikri", "lat":27.09810287796036,  "lng":77.66598590788278, "time": "10:00 AM", "description": "Visit Fatehpur Sikri."},
+                {"name": "Utsav Resort", "lat":27.10111559481698,  "lng": 77.67146630788275, "time": "01:00 PM", "description": "Lunch at Utsav Resort Fatehpur Sikri, Uttar Pradesh 283110"},
+                {"name": "Agra Local Market", "lat":27.181803794135032,  "lng": 78.01661971432763, "time": "02:30 PM", "description": "Explore Agra Local Market for souvenirs."},
+                {"name": "Masala Darbar Restaurant", "lat": 27.17021685023242, "lng": 78.01614210874351, "time": "07:00 PM", "description": "Masala Darbar."}
+            ]
+
+        },
+        sevendays: {
+            day1: [
+            {"name": "Sheroes Hangout", "lat": 27.160207911337025, "lng":78.05373248562948, "time": "08:00 PM", "description": "Lunch at Sheroes Hangout (Agnipath)."},
+            {"name": "Taj Mahal", "lat": 27.17529751235649 , "lng":78.05373248562948 , "time": "10:00 AM", "description": "Visit Taj Mahal."},
+            {"name": "MUGH CHI RESTAURANT", "lat": 27.19082810363553, "lng": 78.02477531186193, "time": "01:00 PM", "description": "Lunch at  MUGH CHI RESTAURANT Mantola, Agra, Uttar Pradesh 282003 "},
+            {"name": "Agra Fort", "lat": 27.181521869815878, "lng":78.02238704180418, "time": "02:30 PM", "description": "Explore Agra Fort."},
+            {"name": "Manoj dosa", "lat":27.18438937789029,  "lng": 78.01620650393401 , "time": "07:00 PM", "description": "Start your day with a hearty breakfast at Manoj dosa (mantola,Agra)."},
+
+        ],
+
+        day2: [
+            {"name": "MUGH CHI RESTAURANT", "lat": 27.19082810363553, "lng": 78.02477531186193, "time": "08:00 PM", "description": "Lunch at  MUGH CHI RESTAURANT Mantola, Agra, Uttar Pradesh 282003 "},
+            {"name": "Mehtab Bagh", "lat": 27.180659051734416, "lng": 78.04242361155094, "time": "10:00 AM", "description": "Visit Mehtab Bagh (Moonlight Garden)."},
+            {"name": "Shiv Family Rastaurant", "lat":27.21640523859157,  "lng": 77.9513455671063 , "time": "01:00 PM", "description": "Lunch at Shiv Family Rastaurant, Agra, Uttar Pradesh 282007"},
+            {"name": "Chini-ka-Rauza", "lat": 27.201538875155588, "lng": 78.03443348878945, "time": "02:30 PM", "description": "Explore Chini-ka-Rauza and Dayal Bagh Temple."},
+            {"name": "Shree Krishna Restaurant", "lat": 27.208174357999464, "lng": 78.04730941383077, "time": "07:00 PM", "description": "Dinner at Shree Krishna Restaurant Agra, Uttar Pradesh 282006"}
+        ],
+        day3: [
+            {"name": "Raja ka dhaba", "lat":27.21789827220171, "lng":  77.94671851482735, "time": "08:00 AM", "description": "Breakfast at Raja ka dhaba."},
+            {"name": "Akbar's Tomb", "lat": 27.22065100638153, "lng": 77.95053364318699, "time": "10:00 AM", "description": "Visit Akbar's Tomb in Sikandra."},
+            {"name": "Pinch of Spice", "lat":27.20880908098449, "lng": 77.99210212522075, "time": "01:00 PM", "description": "Lunch at Pinch of Spice."},
+            {"name": "Tomb of Itimad-ud-Daulah", "lat":  27.193326860800266, "lng": 78.03105000469186, "time": "02:30 PM", "description": "Visit Tomb of Itimad-ud-Daulah."},
+            {"name": "The Green Table", "lat": 27.193687016480272, "lng": 78.03345416522527, "time": "07:00 PM", "description": "Dinner at The Green Table."}
+        ],
+
+        day4: [
+            {"name": "H B K FAMILY RESTAURANT", "lat": 27.10172916853025,  "lng": 77.67408633063565, "time": "08:00 AM", "description": "H B K FAMILY RESTAURANT."},
+            {"name": "Fatehpur Sikri", "lat":27.09810287796036,  "lng":77.66598590788278,"time": "10:00 AM", "description": "Visit Fatehpur Sikri (a day trip from Agra)."},
+            {"name": "Utsav Resort", "lat":27.10111559481698,  "lng": 77.67146630788275, "time": "01:00 PM", "description": "Lunch at Utsav Resort Fatehpur Sikri, Uttar Pradesh 283110"},
+            {"name": "Fatehpur Sikri", "lat":27.09810287796036,  "lng":77.66598590788278, "time": "02:30 PM", "description": "Explore Fatehpur Sikri further."},
+            {"name": "Jodha Restaurant", "lat": 27.096269050040046, "lng":77.66650089201208, "time": "07:00 PM", "description": "Breakfast at Jodha Restaurant  Fatehpur Sikri, Uttar Pradesh 283110"},
+            ],
+
+        day5: [
+            {"name": "Radhe Krishna Fouji Tourist Family Dhabha", "lat": 27.248436511581797,  "lng": 77.82954025930937, "time": "08:00 AM", "description": "Breakfast at Radhe Krishna Fouji Tourist Family Dhabha."},
+            {"name": "Keetham Lake", "lat": 27.25123344911264, "lng": 77.84629940274401, "time": "10:00 AM", "description": "Visit Keetham Lake."},
+            {"name": "Shree Banke Bihari Dhaba", "lat":27.242124927343145, "lng": 77.84337277252517, "time": "01:00 PM", "description": "Lunch at Surya Restaurant."},
+            {"name": "Agra Local Market", "lat":27.181803794135032,  "lng": 78.01661971432763, "time": "02:30 PM", "description": "Explore Agra Local Market for souvenirs."},
+            {"name": "Masala Darbar Restaurant", "lat": 27.17021685023242, "lng": 78.01614210874351, "time": "07:00 PM", "description": "Masala Darbar."}
+            ],
+
+        day6: [
+            {"name": "Brij Rasoi - veg restaurant", "lat": 27.56135644842644,  "lng": 77.62886797330255, "time": "08:00 AM", "description": "Breakfast at Ravi's Kitchen."},
+            {"name": "Mathura City", "lat": 27.559269317962315, "lng": 77.63104502883539, "time": "10:00 AM", "description": "Visit Mathura City (a day trip from Agra, famous for Lord Krishna temples)."},
+            {"name":" TBC Restaurant & sweets", "lat": 27.558128008262972,"lng":  77.64868378268169, "time": "01:00 PM", "description": "Lunch at Radhey Shyam Restaurant in Mathura."},
+            {"name": "Mathura", "lat": 27.487226799401625,  "lng": 77.70071698157166, "time": "02:30 PM", "description": "Explore Mathura further."},
+            {"name": "Hugs & Bite", "lat": 27.494607183052974,  "lng":77.67203361138854, "time": "07:00 PM", "description": "Return to Agra and have dinner at Hugs & Bite."}
+        ],
+
+        day7: [
+            {"name": "Pinch of Spice", "lat":27.20880908098449, "lng": 77.99210212522075, "time": "08:00 AM", "description": "Breakfast at Pinch of Spice (Sanjay Place)."},
+            {"name": "Taj Mahal", "lat": 27.17529751235649 , "lng":78.05373248562948 , "time": "10:00 AM", "description": "Visit Taj Mahal."},
+            {"name": "MUGH CHI RESTAURANT", "lat": 27.19082810363553, "lng": 78.02477531186193, "time": "01:00 PM", "description": "Lunch at  MUGH CHI RESTAURANT Mantola, Agra, Uttar Pradesh 282003 "},
+            {"name": "Agra", "lat": 27.17854471970625,  "lng": 78.03190400704815, "time": "02:30 PM", "description": "Relax and explore Agra at your own pace or attend an Indian cooking class."},
+            {"name": "Pinch of Spice", "lat":27.20880908098449, "lng": 77.99210212522075, "time": "08:00 PM", "description": "Breakfast at Pinch of Spice (Sanjay Place)."},
+            ]
+
+        }
+    };
+    return itineraryData[itinerary][day] || [];
+}
+
+// Initialize the default view (one day itinerary)
+document.addEventListener("DOMContentLoaded", function() {
+    oneday();
+});
+
+// One day itinerary function
+function oneday() {
+    updateMap('day1', 'onedays');
+}
+
+// Helper functions for other itineraries
+function threeone() { updateMap('day1', 'threedays'); }
+function threetwo() { updateMap('day2', 'threedays'); }
+function threethree() { updateMap('day3', 'threedays'); }
+
+function fiveone() { updateMap('day1', 'fivedays'); }
+function fivetwo() { updateMap('day2', 'fivedays'); }
+function fivethree() { updateMap('day3', 'fivedays'); }
+function fivefour() { updateMap('day4', 'fivedays'); }
+function fivefive() { updateMap('day5', 'fivedays'); }
+
+document.getElementById('profile-pic').addEventListener('click', function() {
+            const dropdownMenu = document.getElementById('dropdown-menu');
+            const profileDetails = document.getElementById('profile-details');
+            const settingsMenu = document.getElementById('settings-menu');
+
+            if (dropdownMenu.style.display === 'block') {
+                dropdownMenu.style.display = 'none';
+                profileDetails.style.display = 'none';
+                settingsMenu.style.display = 'none';
+            } else {
+                dropdownMenu.style.display = 'block';
+            }
+        });
+
+        document.getElementById('show-profile').addEventListener('click', function(event) {
+            event.stopPropagation();
+            const profileDetails = document.getElementById('profile-details');
+            profileDetails.style.display = profileDetails.style.display === 'block' ? 'none' : 'block';
+        });
+
+        document.getElementById('close-profile').addEventListener('click', function() {
+            const profileDetails = document.getElementById('profile-details');
+            profileDetails.style.display = 'none';
+        });
+
+        document.getElementById('upload-photo').addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('profile-pic').src = e.target.result;
+                    document.getElementById('profile-summary-pic').src = e.target.result;
+                    document.getElementById('profile-details-pic').src = e.target.result;
+                }
+                reader.readAsDataURL(file);
+            }
+        });
+
+        document.querySelector('#settings-icon').addEventListener('click', function() {
+            const settingsMenu = document.getElementById('settings-menu');
+            settingsMenu.style.display = settingsMenu.style.display === 'block' ? 'none' : 'block';
+        });
+
+        document.getElementById('close-settings').addEventListener('click', function() {
+            const settingsMenu = document.getElementById('settings-menu');
+            settingsMenu.style.display = 'none';
+        });
+
+        window.onclick = function(event) {
+            const dropdownMenu = document.getElementById('dropdown-menu');
+            const profileDetails = document.getElementById('profile-details');
+            const settingsMenu = document.getElementById('settings-menu');
+            
+            if (!event.target.matches('#profile-pic') && !event.target.closest('.dropdown-menu')) {
+                dropdownMenu.style.display = 'none';
+                profileDetails.style.display = 'none';
+                settingsMenu.style.display = 'none';
+            }
+        };
+        function updateFileName() {
+          const input = document.getElementById('id_profile_photo');
+          const text = document.getElementById('file-chosen-text');
+  
+          if (input.files.length > 0) {
+              text.textContent = input.files[0].name;
+          } else {
+              text.textContent = 'No file chosen';
+          }
+        }
+    </script>
+</body>
+</html>

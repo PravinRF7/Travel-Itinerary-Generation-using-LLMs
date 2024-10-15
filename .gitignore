@@ -1,0 +1,6 @@
+foursquare_data.json
+myapp/.env
+db.sqlite3
+media/
+static/
+staticfiles/

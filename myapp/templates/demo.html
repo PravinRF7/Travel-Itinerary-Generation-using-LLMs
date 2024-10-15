@@ -1,0 +1,584 @@
+{% load static%}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voyage Verse</title>
+    <link rel="stylesheet" href="{% static 'css/demo.css' %}">
+    <link rel="icon" href="{% static 'favicon.ico' %}" type="image/x-icon">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+    /* Modal default (light mode) styles */
+.modal {
+    display: none; /* Hidden by default */
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7); /* Transparent black background */
+}
+
+.modal-content {
+    background-color: #fff;
+    margin: 15% auto;
+    padding: 20px;
+    border: 1px solid #888;
+    width: 400px;
+    border-radius: 8px;
+    text-align: center;
+    color: #333; /* Text color in light mode */
+}
+
+.close-btn {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+}
+
+.close-btn:hover,
+.close-btn:focus {
+    color: #000;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.confirm-btn {
+    background-color: #00C1D4;
+    color: #fff;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-top: 15px;
+}
+
+.confirm-btn:hover {
+    background-color: #00a0b2;
+}
+
+/* Modal dark mode styles */
+.modal.dark-mode .modal-content {
+    background-color: #333;  /* Dark background for modal content */
+    color: #fff;             /* White text color for dark mode */
+    border: 1px solid #555;  /* Border color for dark mode */
+}
+
+.modal.dark-mode .close-btn {
+    color: #fff;             /* White close button in dark mode */
+}
+
+.modal.dark-mode .confirm-btn {
+    background-color: #00C1D4;  /* Darker button background in dark mode */
+}
+
+.modal.dark-mode .confirm-btn:hover {
+    background-color: #00C1D4;  /* Button hover state in dark mode */
+}
+
+/* Hide chat interface by default */
+.hidden {
+    display: none;
+}
+/* Chatbot button styles */
+#chatbot-button {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background-color: transparent; /* No background */
+    border: none; /* No border */
+    cursor: pointer;
+    z-index: 1000;
+    width: 80px; /* Increase width to enlarge the GIF */
+    height: 80px; /* Increase height to enlarge the GIF */
+    padding: 0; /* Remove padding */
+}
+
+/* Styling the chatbot GIF */
+.chatbot-gif {
+    width: 100%; /* GIF takes up full button size */
+    height: auto; /* Maintain aspect ratio */
+    border-radius: 50%; /* Optional: Make GIF circular */
+}
+
+/* Chat interface styles (Light Mode) */
+#chat-interface {
+    position: fixed;
+    bottom: 90px;
+    right: 20px;
+    width: 300px;
+    height: 400px;
+    background-color: white;
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    z-index: 1000;
+    overflow: hidden;
+    display: none; /* Start hidden */
+}
+
+#chat-header {
+    background-color: #00C1D4;
+    color: white;
+    padding: 10px;
+    font-weight: bold;
+}
+
+#chat-messages {
+    height: 300px;
+    overflow-y: auto;
+    padding: 10px;
+    background-color: white;
+    color: #333;
+}
+
+#chat-input {
+    display: flex;
+    padding: 10px;
+    background-color: #f4f4f4;
+}
+
+#chat-input input {
+    flex-grow: 1;
+    padding: 5px;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    background-color: white;
+    color: #333;
+}
+
+#chat-input button {
+    background-color: #00C1D4;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    margin-left: 5px;
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+
+/* Chat interface styles (Dark Mode) */
+#chat-interface.dark-mode {
+    background-color: #333;
+    border: 1px solid #555;
+}
+
+#chat-header.dark-mode {
+    background-color: #555;
+    color: #fff;
+}
+
+#chat-messages.dark-mode {
+    background-color: #444;
+    color: white;
+}
+
+#chat-input.dark-mode {
+    background-color: #555;
+}
+
+#chat-input input.dark-mode {
+    background-color: #444;
+    color: white;
+    border: 1px solid #666;
+}
+
+#chat-input button.dark-mode {
+    background-color: #00C1D4;
+    color: white;
+}
+
+/* Scroll bar styling for chat messages */
+#chat-messages {
+    scrollbar-width: thin;
+    scrollbar-color: #00C1D4 #f4f4f4;
+}
+
+#chat-messages::-webkit-scrollbar {
+    width: 6px;
+}
+
+#chat-messages::-webkit-scrollbar-thumb {
+    background-color: #00C1D4;
+    border-radius: 10px;
+}
+
+#chat-messages::-webkit-scrollbar-track {
+    background-color: #f4f4f4;
+}
+.ai-guide-image {
+    width: 50px; /* Set the width as desired */
+    height: auto; /* Maintain aspect ratio */
+    vertical-align: middle; /* Align with text */
+}
+/* Portfolio Section */
+#portfolio {
+    padding: 50px 0;
+    background-color: #333;
+    color: #e1e1e1; /* Default text color */
+}
+
+.dark-mode #portfolio {
+    background-color: #f4f4f4; /* Background for dark mode */
+    color: #333; /* Change text color for dark mode */
+}
+
+/* Update container style */
+.container {
+    max-width: 100%; /* Use percentage for max-width */
+    margin: 0 auto; /* Center the container */
+    padding: 0 20px; /* Add some padding for small screens */
+    text-align: center; /* Center text inside the container */
+}
+
+/* Flex container for portfolio items */
+.work-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    justify-content: space-between;
+}
+
+/* Ensure consistent size for portfolio items */
+.work {
+    width: calc(33.333% - 20px); /* Three items per row with gap */
+    position: relative;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Maintain consistent image size and aspect ratio */
+.work img {
+    width: 100%;
+    height: 250px; /* Set fixed height for consistency */
+    object-fit: cover; /* Ensures the image covers the area while maintaining aspect ratio */
+    display: block;
+    transition: transform 0.5s;
+}
+
+/* Hover effect for image */
+.work:hover img {
+    transform: scale(1.1);
+}
+
+/* Layer Overlay on Hover */
+.layer {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    background: radial-gradient(circle, transparent 60%, rgba(0, 0, 0, 0.7) 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    color: #fff; /* Keep this white for overlay text */
+}
+
+/* Show Overlay on Hover */
+.work:hover .layer {
+    opacity: 1;
+}
+
+/* Hover effect for the work item */
+.work:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* Text alignment inside the overlay */
+.layer h2 {
+    font-size: 18px;
+    color: #fff; /* Overlay text color */
+    margin-bottom: 10px;
+}
+
+.layer a {
+    color: #ff004f; /* Link color */
+    text-decoration: none;
+    background: #fff;
+    font-size: 18px;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: background-color 0.3s ease;
+}
+
+/* Hover effect for links */
+.layer a:hover {
+    background-color: #ff004f;
+    color: #fff;
+}
+
+/* Button Style */
+.buttn {
+    display: block;
+    margin: 50px auto;
+    width: fit-content;
+    border: 1px solid #ff004f;
+    padding: 14px 50px;
+    border-radius: 6px;
+    text-decoration: none;
+    color: #fff; /* Button text color */
+    transition: 0.5s;
+}
+
+.buttn:hover {
+    background: #ff004f;
+}
+
+.information {
+    text-align: center; /* Center the text */
+    padding-left: 20px;
+}
+</style>
+</head>
+<body>
+    <header class="top-nav">
+        <a href="{% url 'blog:index' %}" class="logo">
+            <img src="{% static 'images/logo.png' %}" alt="Logo">
+        </a>
+        <nav>
+            <ul>
+                <li><a href="{% url 'blog:index' %}" class="nav-link">Home</a></li>
+                <li><a href="{% url 'blog:index' %}#about" class="nav-link" id="about-link">About</a></li>
+                <li><a href="{% url 'blog:index' %}#contact" class="nav-link" id="contact-link">Contact</a></li>
+            </ul>
+        </nav>
+
+        <div class="nav-icons">
+            <i class="icon-bell"></i>
+            <div class="profile-container">
+                <img src="{{ profile.profile_photo.url }}" alt="User" class="profile-pic" id="profile-pic">
+            
+                <div class="dropdown-menu" id="dropdown-menu">
+                    <div class="profile-summary">
+                        <img src="{{ profile.profile_photo.url }}" alt="User" class="profile-pic-large" id="profile-summary-pic">
+                        <p>Name: <strong>{{ user.get_full_name|default:user.username }}</strong></p>
+                    </div>
+                    <hr>
+                    <ul>
+                        <li id="show-profile"><a href="#"><i class="icon-eye"></i> Show Profile</a></li>
+                        <li><a href="#" id="settings-icon"><i class="icon-settings"></i> Settings</a></li>
+                        <li><a href="{% url 'logout' %}"><i class="icon-signout"></i> Sign out</a></li>
+                    </ul>
+            
+                    <div id="profile-details" style="display: none;">
+                        <div class="profile-info">
+                            <button id="close-profile" class="close-btn">&times;</button>
+                            <img src="{{ profile.profile_photo.url }}" alt="User" class="profile-pic-large" id="profile-details-pic">
+                            <div class="user-details">
+                                <p>Name: <strong>{{ user.get_full_name|default:user.username }}</strong></p>
+                                <p>Email: <strong>{{ user.email }}</strong></p>
+                            </div>
+                        </div>
+            
+                        <!-- Form for uploading a new profile photo -->
+                        <form method="post" enctype="multipart/form-data">
+                            {% csrf_token %}
+                            <!-- Custom file upload -->
+                            <div class="upload-field">
+                                <!-- Custom button and hidden file input -->
+                                <label for="id_profile_photo" class="file-input-label">Choose File</label>
+                                <input type="file" id="id_profile_photo" name="profile_photo" class="file-input" style="display: none;" onchange="updateFileName()">
+                                
+                                <!-- Text for No file chosen -->
+                                <span class="file-chosen-text" id="file-chosen-text">No file chosen</span>
+                            </div>
+                            <button type="submit" class="save-btn">Save Photo</button>
+                        </form>
+                    </div>
+                </div>
+            </div>                                             
+        </div>
+        <button class="night-mode-toggle" onclick="toggleNightMode()">
+                    <span id="modeIcon">🌙</span>
+                </button>
+    </header>
+    <div class="search-bar">
+        <h2>Search for Your Travel Destination</h2>
+        <form id="search-form" method="post" action="{% url 'blog:demo' %}">
+            {% csrf_token %}
+            <div class="form-group">
+                <h3>Destination Name</h3>
+                <select id="destination" name="destination" required onchange="showSelectedDistrict()">
+                    <option value="" disabled selected>Select a district</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <h3>Start Date</h3>
+                <input type="date" id="start-date" name="start-date" required>
+            </div>
+            
+            <div class="form-group">
+                <h3>End Date</h3>
+                <input type="date" id="end-date" name="end-date" required>
+            </div>
+            
+            <div class="form-group">
+                <h3>Minimum Budget</h3>
+                <select id="min-budget" name="min-budget" required>
+                    <option value="Low">Low</option>
+                    <option value="Medium">Medium</option>
+                    <option value="High">High</option>
+                    <option value="Luxury">Luxury</option>
+                </select>
+            </div>
+    
+            <div class="form-group">
+                <h3>Maximum Budget</h3>
+                <select id="max-budget" name="max-budget" required>
+                    <option value="Low">Low</option>
+                    <option value="Medium">Medium</option>
+                    <option value="High">High</option>
+                    <option value="Luxury">Luxury</option>
+                </select>
+            </div>
+            <button type="submit">Search</button>
+        </form>
+    </div>
+    <!-- Modal structure -->
+    
+
+    <div class="why-choose-us">
+        <h2>Why choose us?</h2>
+        <div class="features-container">
+            <div class="feature">
+                <h3>Personalized Itineraries</h3>
+                <p>Receive tailored itineraries that align with your preferences, budget, and travel style, ensuring a unique and enjoyable experience.</p>
+            </div>
+            <div class="feature">
+                <h3>Budget-Friendly Planning</h3>
+                <p>Whether you're saving or splurging, Voyage Verse adjusts recommendations to fit your financial plan, making travel accessible and stress-free.</p>
+            </div>
+            <div class="feature">
+                <h3>Interactive Maps</h3>
+                <p>Visualize your entire journey with Leaflet-integrated maps, guiding you through the best routes, attractions, and dining spots.</p>
+            </div>
+            <div class="feature">
+                <h3>Expert Travel Tips</h3>
+                <p>Benefit from curated travel tips and advice, ensuring you make the most of your destination, discovering hidden gems and must-see spots.</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="portfolio"></div>
+        <div class="container">
+            <h1 class="information">Top destination</h1>
+            <div class="work-list">
+                <div class="work">
+                    <img src="{% static 'images/amritsar.jpg' %}">
+                    <div class="layer">
+                        <h2><strong>Amristar</strong></h2>
+                        <a href="{% url 'blog:amristar' %}"><i class="fa-solid fa-link"></i></a>
+                    </div>
+                </div>
+                <div class="work">
+                    <img src="{% static 'images/ng1.jpeg.jpg' %}">
+                    <div class="layer">
+                        <h2><strong>Agra</strong></h2>
+                        <a href="{% url 'blog:agra' %}"><i class="fa-solid fa-link"></i></a>
+                    </div>
+                </div>
+                <div class="work">
+                    <img src="{% static 'images/pondicherry.jpeg' %}">
+                    <div class="layer">
+                        <h2>Pondicherry</h2>
+                        <a href="{% url 'blog:pondicherry' %}"><i class="fa-solid fa-link"></i></a>
+                    </div>
+                </div>
+                <div class="work">
+                    <img src="{% static 'images/kullu.jpeg' %}">
+                    <div class="layer">
+                        <h2><strong>Kullu</strong></h2>
+                        <a href="{% url 'blog:kullu' %}"><i class="fa-solid fa-link"></i></a>
+                    </div>
+                </div>
+                <div class="work">
+                    <img src="{% static 'images/andhaman.jpg' %}">
+                    <div class="layer">
+                        <h2><strong>Andamanislands</strong></h2>
+                        <a href="{% url 'blog:andamanislands' %}"><i class="fa-solid fa-link"></i></a>
+                    </div>
+                </div>
+                <div class="work">
+                    <img src="{% static 'images/goa.jpeg' %}">
+                    <div class="layer">
+                        <h2><strong>Goa</strong></h2>
+                        <a href="{% url 'blog:goa' %}"><i class="fa-solid fa-link"></i></a>
+                    </div>
+                </div>
+            </div> 
+        </div>
+    </div>
+    
+    <section class="testimonials">
+        <h2>What They're Saying</h2>
+        <p>Rated 4.8 out of 5 at TrustPilot</p>
+        
+        <div class="testimonial-row">
+            <div class="testimonial-card">
+                <div class="rating">
+                    <span>Edson</span>
+                    <span>5.0 ★★★★★</span>
+                </div>
+                <p class="review-text">Nice. The support was very professional.</p>
+                <p class="reviewer">Jan 31, 2023</p>
+            </div>
+
+            <div class="testimonial-card">
+                <div class="rating">
+                    <span>Amer Garibović</span>
+                    <span>5.0 ★★★★★</span>
+                </div>
+                <p class="review-text">Amazing service! I bought Reseller hosting at Verpex...</p>
+                <p class="reviewer">Jan 26, 2023</p>
+            </div>
+
+            <div class="testimonial-card">
+                <div class="rating">
+                    <span>Waqas Ahmed</span>
+                    <span>5.0 ★★★★★</span>
+                </div>
+                <p class="review-text">One of the most reliable and supportive...</p>
+                <p class="reviewer">Jan 21, 2023</p>
+            </div>
+        </div>
+    </section>
+
+<!-- Chat bot button with GIF -->
+<button id="chatbot-button" class="chatbot-icon">
+    <img src="thinking.gif" alt="Chatbot Icon" class="chatbot-gif">
+</button>
+
+<!-- Chat interface -->
+<div id="chat-interface" class="hidden">
+    <div id="chat-header">Chatbot</div>
+    <div id="chat-messages"></div>
+    <div id="chat-input">
+        <input type="text" id="user-input" placeholder="Type your message...">
+        <button id="send-button" onclick="sendMessage()">Send</button>
+    </div>
+</div>
+    <!---------------------------Footer------------------->
+    <footer>
+        <p>&copy; Voyage Verse-2024</p>
+    </footer>
+    <!---------------------------Script------------------->
+    <script src="{% static 'js/demo.js' %}"></script>
+
+</body>
+</html>
+

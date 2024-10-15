@@ -1,0 +1,718 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="{% static 'favicon.ico' %}" type="image/x-icon">
+    <title>Voyage Verse</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        /* General Styles */
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    transition: background-color 0.3s ease;
+    background: url('video/Video.mp4') no-repeat center center/cover;
+}
+
+body.day-mode {
+    background-color: #ffffff; /* Background for day mode */
+}
+.back-video{
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    z-index: -1;
+}
+header {
+    background-color: #333;
+    color: #fff;
+    padding: 10px 20px;
+    position: fixed;
+    width: 100%;
+    top: 0;
+    z-index: 1000;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-sizing: border-box;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+body.day-mode header {
+    background-color: #333;
+    color: #333;
+}
+
+.logo {
+    flex: 1;
+}
+
+.logo img {
+    max-height: 50px;
+    transition: max-height 0.3s ease;
+}
+
+/* Smaller logo size on scroll */
+header.scrolled .logo img {
+    max-height: 30px;
+}
+
+nav {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    flex: 2;
+}
+
+nav ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    gap: 20px;
+    align-items: center;
+}
+
+nav ul li a {
+    color: #fff;
+    text-decoration: none;
+    transition: transform 0.5s, color 0.3s ease;
+}
+
+body.day-mode nav ul li a {
+    color: #fff;
+}
+
+nav ul li a:hover {
+    color: #6E2AF5;
+    transform: translateY(-5px);
+}
+
+body.day-mode nav ul li a:hover {
+    color: #6E2AF5;
+}
+
+/* Sections */
+section {
+    padding: 30px 10px; /* Reduce the padding from 50px to 30px */
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 1s ease-in-out, transform 1s ease-in-out;
+    text-align: justify;
+}
+
+section.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Hero Section */
+.hero {
+    
+    color: #fff;
+    flex-direction: column;
+    text-align: center;
+    align-items: center;
+    display: flex;
+    justify-content: center;
+    height: 100vh;
+}
+
+body.day-mode .hero {
+    color: #000; /* Hero text color for day mode */
+}
+
+.get-button {
+    margin-top: 20px; /* Optional: Add some margin if needed */
+    padding: 10px 20px;
+    background-color: #333;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+body.day-mode .get-button {
+    background-color: #f1f1f1; /* Button background for day mode */
+    color: #333; /* Button text color for day mode */
+}
+
+.get-button:hover {
+    background-color: #555;
+}
+
+.get-button:active {
+    background-color: #111;
+}
+
+.get-button .button-content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.get-button .button-content i {
+    margin-left: 8px;
+    transition: transform 0.3s ease;
+}
+
+.get-button:hover .button-content i {
+    transform: translateX(5px);
+}
+
+.hero h1 {
+    font-size: 50px;
+    margin: 0;
+}
+
+.hero p {
+    font-size: 20px;
+}
+
+/* About Section Columns */
+/* Default (Night Mode) */
+body {
+    background-color: #333;
+    color: #E1D14E;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* About Section in Night Mode */
+.about-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px 20px;
+}
+
+.about-column {
+    background-color: #444;
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+    flex: 1;
+    min-width: 280px;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    color: #fff;
+}
+
+.about-column:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.7);
+}
+
+.about-column h1 {
+    font-size: 24px;
+    margin-bottom: 15px;
+}
+
+.about-column p, .about-column ul {
+    font-size: 16px;
+    line-height: 1.6;
+}
+
+.about-column ul {
+    padding-left: 20px;
+}
+
+.about-column ul li {
+    margin-bottom: 10px;
+}
+
+/* Day Mode Styles */
+body.day-mode {
+    background-color: #f8f8f8;
+    color: #333;
+}
+
+body.day-mode .about-column {
+    background-color: #ffffff;
+    color: #333;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+}
+
+body.day-mode .about-column:hover {
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+}
+
+@media (max-width: 768px) {
+    .about-container {
+        flex-direction: column;
+        gap: 30px;
+    }
+}
+
+
+/* Contact Section */
+.contact {
+    background-color: #333; /* Dark mode default */
+    padding: 50px 0;
+    display: flex;
+    justify-content: center;
+    
+}
+
+body.day-mode .contact {
+    background-color: #fff; /* White background for day mode */
+    color: #333; /* Dark text for day mode */
+}
+
+.container {
+    width: 80%;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.row {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 30px;
+}
+
+.contact-left,
+.contact-right {
+    flex-basis: 40%;
+}
+
+.contact-left {
+    text-align: left;
+}
+
+.contact-left h1 {
+    font-size: 24px;
+    color: #fff; /* Dark mode default heading color */
+}
+
+body.day-mode .contact-left h1 {
+    color: #333; /* Heading color for day mode */
+}
+
+.contact-left p {
+    margin-top: 30px;
+    font-size: 18px;
+    color: #bbb; /* Dark mode paragraph color */
+}
+
+body.day-mode .contact-left p {
+    color: #666; /* Paragraph color for day mode */
+}
+
+.social-icons a {
+    color: #bbb; /* Social icon color for dark mode */
+    font-size: 24px;
+    margin-right: 20px;
+    transition: color 0.3s ease;
+}
+
+body.day-mode .social-icons a {
+    color: #333; /* Social icons color for day mode */
+}
+
+.social-icons a:hover {
+    color: #6E2AF5;
+}
+
+body.day-mode .social-icons a:hover {
+    color: #6E2AF5; /* Ensure hover color for day mode */
+}
+
+.contact-right {
+    background-color: #444; /* Dark mode background */
+    padding: 40px;
+    border-radius: 8px;
+    box-shadow: 0px 0px 15px rgba(0, 0, 0, 0.7);
+}
+
+body.day-mode .contact-right {
+    background-color: #f8f8f8; /* Background for day mode */
+    box-shadow: 0px 0px 15px rgba(0, 0, 0, 0.1);
+}
+
+.contact-right h1 {
+    font-size: 24px;
+    color: #fff; /* Dark mode heading color */
+    margin-bottom: 20px;
+}
+
+body.day-mode .contact-right h1 {
+    color: #333; /* Heading color for day mode */
+}
+
+.contact-right form label {
+    font-size: 16px;
+    color: #fff; /* Dark mode label color */
+    display: block;
+    margin-top: 20px;
+}
+
+body.day-mode .contact-right form label {
+    color: #333; /* Label color for day mode */
+}
+
+.contact-right form input,
+.contact-right form textarea {
+    width: 100%;
+    padding: 10px;
+    margin-top: 10px;
+    border: 1px solid #666; /* Dark mode border */
+    border-radius: 5px;
+    font-size: 16px;
+    background-color: #555; /* Dark mode input background */
+    color: #eee; /* Dark mode input text */
+}
+
+body.day-mode .contact-right form input,
+body.day-mode .contact-right form textarea {
+    background-color: #f8f8f8; /* Input background for day mode */
+    color: #333; /* Input text color for day mode */
+    border: 1px solid #ccc; /* Input border for day mode */
+}
+
+.contact-right form textarea {
+    resize: vertical;
+    min-height: 150px;
+}
+
+.contact-right form button {
+    margin-top: 20px;
+    padding: 10px 20px;
+    background-color: #fff; /* Dark mode button background */
+    color: #333; /* Dark mode button text */
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+body.day-mode .contact-right form button {
+    background-color: #f1f1f1; /* Button background for day mode */
+    color: #333; /* Button text color for day mode */
+}
+
+.contact-right form button:hover {
+    background-color: #555;
+}
+
+.contact-right form button:active {
+    background-color: #111;
+}
+footer {
+    background-color: #333;
+    color: #fff;
+    text-align: center;
+    padding: 10px 20px;
+    width: 100%;
+    box-sizing: border-box; 
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+body.day-mode footer {
+    background-color: #333; /* Footer background for day mode */
+    color: #fff; /* Footer text color for day mode */
+}
+/* Night Mode Toggle Button */
+.night-mode-toggle {
+    background: #007bff;
+    color: #fff;
+    border: none;
+    padding: 0.5rem;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 1.5rem;
+    transition: background 0.3s;
+    margin-left: 20px; /* Adjust spacing between the toggle and other nav items */
+}
+
+.night-mode-toggle:hover {
+    background: #0056b3;
+}
+
+/* Responsive Styles */
+@media screen and (max-width: 768px) {
+    header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    nav ul {
+        flex-direction: column;
+        gap: 10px;
+        align-items: flex-start;
+    }
+
+    .hero {
+        padding: 50px 20px;
+    }
+
+    .hero h1 {
+        font-size: 36px;
+    }
+
+    .hero p {
+        font-size: 16px;
+    }
+
+    .contact-left,
+    .contact-right {
+        flex-basis: 100%;
+    }
+
+    .container {
+        width: 90%;
+    }
+}
+
+
+/* Side Menu Styles */
+.side-menu {
+    height: 100%;
+    width: 0;
+    position: fixed;
+    z-index: 1000;
+    top: 0;
+    left: 0;
+    background-color: #333;
+    overflow-x: hidden;
+    transition: 0.5s;
+    padding-top: 60px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.side-menu a {
+    padding: 10px 20px;
+    text-decoration: none;
+    font-size: 18px;
+    color: white;
+    display: block;
+    transition: 0.3s;
+}
+
+.side-menu a:hover {
+    background-color: #575757;
+}
+
+.side-menu .closebtn {
+    position: absolute;
+    top: 10px;
+    right: 25px;
+    font-size: 36px;
+}
+
+/* Open Menu Button Styles */
+.open-menu-btn {
+    font-size: 24px;
+    background-color: #333;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    cursor: pointer;
+    position: fixed;
+    top: 10px;
+    left: 10px;
+    z-index: 1001;
+    display: none;
+}
+
+.open-menu-btn:hover {
+    background-color: #555;
+}
+
+/* Media Query to Show Menu on Small Screens */
+@media (max-width: 600px) {
+    .open-menu-btn {
+        display: block;
+    }
+
+    nav ul {
+        display: none;
+    }
+}
+    </style>
+</head>
+<body class="night-mode"> 
+    <!-- Start with night mode by default -->
+    <video autoplay loop muted play-inline class="back-video">
+        <source src="{%static 'video/video.mp4' %}" type="video/mp4">
+    </video>
+    <header>
+        <a href="#home" class="logo">
+            <img src="{% static 'images/logo.png' %}" alt="Logo">
+        </a>
+        <nav>
+            <ul>
+                <li><a href="#home" class="nav-link">Home</a></li>
+                <li><a href="#about" class="nav-link">About</a></li>
+                <li><a href="#contact" class="nav-link">Contact</a></li>
+                <button class="night-mode-toggle" onclick="toggleNightMode()">
+                    <span id="modeIcon">🌙</span>
+                </button>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <section id="home" class="hero">
+            <h1>Welcome to Voyage Verse</h1>
+            <p>Your ultimate destination for Travel query.</p>
+            <form action="{% url 'blog:login' %}" method="get">
+                <button class="button get-button" type="submit">
+                    <span class="button-content">Get started <i class="fas fa-arrow-right"></i></span>
+                </button>
+            </form>
+        </section>
+        
+        <section id="about" class="about">
+            <div class="about-container">
+                <div class="about-column">
+                    <h1>About Us</h1>
+                    <p>Welcome to Voyage Verse. At Voyage Verse, our mission is to revolutionize the way you experience travel. We’re passionate about crafting personalized, memorable journeys that align perfectly with your interests and preferences.</p>
+                    <h1>Our Vision</h1>
+                    <p>We believe that every journey should be unique and tailored to your desires. Our vision is to provide travelers with an intelligent, intuitive tool that makes planning effortless and enjoyable.</p>
+                </div>
+                <div class="about-column">
+                    <h1>What We Offer</h1>
+                    <ul>
+                        <li><strong>Personalized Itineraries:</strong> Our platform uses AI to generate travel itineraries based on your preferences.</li>
+                        <li><strong>Smart Recommendations:</strong> Discover top attractions, dining, and accommodations with our intelligent engine.</li>
+                        <li><strong>Local Insights:</strong> Explore detailed information about your destination, including local tips and hidden gems.</li>
+                        <li><strong>Seamless Integration:</strong> Plan your trip effortlessly with our integrated services.</li>
+                    </ul>
+                </div>
+                <div class="about-column">
+                    <h1>How It Works?</h1>
+                    <p>Input your preferences, generate your itinerary, explore recommendations, and stay informed with real-time updates.</p>
+                    <h1>Join Us on This Journey</h1>
+                    <p>Whether you’re planning a weekend getaway or a grand adventure, Voyage Verse is here to guide you every step of the way. Explore new destinations, discover hidden gems, and create unforgettable memories with our innovative travel planning tool.
+                    <br>
+                    Thank you for choosing us as your travel companion. We look forward to helping you make your next trip extraordinary!</p>
+                </div>
+            </div>
+
+        </section>
+        
+
+        <section id="contact" class="contact">
+            <div class="container">
+                <div class="row">
+                    <div class="contact-left">
+                        <h1><i class="fa-solid fa-circle-user"></i>Contact Me</h1>
+                        <p><i class="fa-solid fa-envelope"></i> NAME</p>
+                        <p><i class="fa-solid fa-phone"></i> +911234567890</p>
+                        <p><i class="fa-solid fa-location-dot"></i> Trichy</p>
+                        <div class="social-icons">
+                            <a href="http://www.linkedin.com/"><i class="fa-brands fa-linkedin"></i></a>
+                            <a href="https://www.instagram.com/"><i class="fa-brands fa-instagram"></i></a>
+                            <a href="https://www.facebook.com/"><i class="fa-brands fa-facebook"></i></a>
+                        </div>
+                    </div>
+                    <div class="contact-right">
+                        <div class="question">
+                            <h1><i class="fa-solid fa-pencil"></i>Query Section</h1>
+                        </div>
+                        <form id="contact-form" method="post" action="{% url 'blog:saveenquiry' %}">
+                            {% csrf_token %}
+                            <label for="name">Name:</label>
+                            <input type="text" id="name" name="name" required>
+                            <label for="email">Email:</label>
+                            <input type="email" id="email" name="email" required>
+                            <label for="message">Message:</label>
+                            <textarea id="message" name="message" required></textarea>
+                            <button type="submit">submit</button>
+                        </form>
+                    </div>          
+                </div>
+            </div>
+        </section>
+        <!---------------------------Footer------------------->
+        <footer>
+            <p>&copy; Voyage Verse - 2024 </p>
+        </footer>
+    </main>
+
+        <!-- Side Menu for Small Screens -->
+    <div id="sideMenu" class="side-menu">
+        <a href="#home" class="side-nav-link">Home</a>
+        <a href="#about" class="side-nav-link">About</a>
+        <a href="#contact" class="side-nav-link">Contact</a>
+        <button class="night-mode-toggle" onclick="toggleNightMode()">
+            <span id="modeIcon">🌙</span>
+        </button>
+        <a href="javascript:void(0)" class="closebtn" onclick="closeMenu()">X</a>
+    </div>
+
+    <!-- Menu Button for Small Screens -->
+    <button class="open-menu-btn" onclick="openMenu()">☰ Menu</button>
+
+    
+    <script>
+        // Smooth scrolling for navigation links
+        document.querySelectorAll('.nav-link').forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                document.querySelector(this.getAttribute('href')).scrollIntoView({
+                    behavior: 'smooth'
+                });
+            });
+        });
+
+        // Intersection Observer for animations
+        const observerOptions = {
+            threshold: 0.1
+        };
+
+        const observer = new IntersectionObserver((entries, observer) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.hero, .about, .contact').forEach(section => {
+            observer.observe(section);
+        });
+
+        // Night Mode Toggle
+        function toggleNightMode() {
+            const body = document.body;
+            const modeIcon = document.getElementById('modeIcon');
+            
+            // Toggle the day-mode class on the body
+            body.classList.toggle('day-mode');
+            body.classList.toggle('night-mode');
+            
+            // Change the icon and the text based on the current mode
+            if (body.classList.contains('day-mode')) {
+                modeIcon.textContent = '☀️'; // Day mode icon
+            } else {
+                modeIcon.textContent = '🌙'; // Night mode icon
+            }
+        }
+
+        function openMenu() {
+            document.getElementById("sideMenu").style.width = "250px";
+        }
+
+        function closeMenu() {
+            document.getElementById("sideMenu").style.width = "0";
+        }
+
+    </script>
+</body>
+</html>
