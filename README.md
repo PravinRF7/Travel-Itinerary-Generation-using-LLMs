@@ -82,6 +82,7 @@ To get started with **Travel Itinerary Generator**:
 
 Once the personalized itinerary is complete, users receive a beautifully crafted, detailed PDF that outlines their travel plans in an easy-to-read and visually pleasing format. Here are examples of what the output might look like:
 
-![Output Example 1](assets/output_1.jpeg)  
-![Output Example 2](assets/output_2.jpeg)  
-![Output Example 3](assets/output_3.jpeg)  
+![Output Example 1](https://github.com/PravinRF7/Travel-Itinerary-Generation-using-LLMs/blob/main/assets/output_1.jpg)  
+
+![Output Example 2](https://github.com/PravinRF7/Travel-Itinerary-Generation-using-LLMs/blob/main/assets/output_2.jpg)  
+![Output Example 3](assets/output_3.jpg)  
