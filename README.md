@@ -38,7 +38,7 @@ Explore popular destinations as well as hidden gems curated by Travel Itinerary 
 
 ### Flowchart
 Here is a flowchart illustrating the process behind Travel Itinerary Generator's personalized itinerary generation:  
-![Flowchart](assets/flowchart.png)
+![Flowchart](assets/flowchart.jpeg)
 
 ## Usage
 
@@ -82,6 +82,6 @@ To get started with **Travel Itinerary Generator**:
 
 Once the personalized itinerary is complete, users receive a beautifully crafted, detailed PDF that outlines their travel plans in an easy-to-read and visually pleasing format. Here are examples of what the output might look like:
 
-![Output Example 1](assets/output1.png)  
-![Output Example 2](assets/output2.png)  
-![Output Example 3](assets/output3.png)  
+![Output Example 1](assets/output1.jpeg)  
+![Output Example 2](assets/output2.jpeg)  
+![Output Example 3](assets/output3.jpeg)  
